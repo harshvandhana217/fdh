@@ -1,65 +1,64 @@
 const Admin = require('../models/Admin');
 
 exports.getAdminNumber = async (req, res) => {
-    try {
-        const admin = await Admin.findOne();
-        if (!admin) {
-            return res.status(404).json({
-                success: false,
-                message: "Admin not found"
-            });
-        }
-
-        res.status(200).json({
-            success: true,
-            data: admin.phoneNumber
-        });
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({
-            success: false,
-            message: "Error fetching admin phone number",
-            error: err.message
-        });
+  try {
+    let admin = await Admin.findOne();
+    // If there's no Admin document yet, create one with a null phoneNumber
+    if (!admin) {
+      admin = await Admin.create({ phoneNumber: null });
     }
+
+    // Always return success: true, with data set (possibly null)
+    return res.status(200).json({
+      success: true,
+      data: admin.phoneNumber
+    });
+
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({
+      success: false,
+      message: "Error fetching admin phone number",
+      error: err.message
+    });
+  }
 };
+
 exports.updateAdminNumber = async (req, res) => {
-    try {
-        const { phoneNumber } = req.body;
+  try {
+    const { phoneNumber } = req.body;
 
-        if (phoneNumber === 'null') {
-            // If the phone number is 'null' (erase operation), set the phone number to null in the database
-            await Admin.updateOne({}, { phoneNumber: null });
-        } else {
-            // Validate the phone number format (supports 10 digits)
-            const phoneRegex = /^[0-9]{10}$/;
-            if (!phoneRegex.test(phoneNumber)) {
-                return res.status(400).json({
-                    success: false,
-                    message: "Invalid phone number format"
-                });
-            }
-
-            // Check if the admin exists
-            let admin = await Admin.findOne();
-            if (!admin) {
-                admin = new Admin({ phoneNumber });
-            } else {
-                admin.phoneNumber = phoneNumber;
-            }
-
-            // Save or update the admin phone number
-            await admin.save();
-        }
-
-        // Redirect to the settings page after successful update
-        res.redirect('/api/admin/settings');
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({
-            success: false,
-            message: "Error updating admin phone number",
-            error: err.message
+    if (phoneNumber === 'null') {
+      await Admin.updateOne({}, { phoneNumber: null });
+    } else {
+      const phoneRegex = /^[0-9]{10}$/;
+      if (!phoneRegex.test(phoneNumber)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid phone number format"
         });
+      }
+      let admin = await Admin.findOne();
+      if (!admin) {
+        admin = new Admin({ phoneNumber });
+      } else {
+        admin.phoneNumber = phoneNumber;
+      }
+      await admin.save();
     }
+
+    // Return JSON to the client
+    return res.status(200).json({
+      success: true,
+      data: phoneNumber === 'null' ? null : phoneNumber
+    });
+
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({
+      success: false,
+      message: "Error updating admin phone number",
+      error: err.message
+    });
+  }
 };
