@@ -1,9 +1,22 @@
+// models/Call.js
 const mongoose = require('mongoose');
 
-const CallSchema = new mongoose.Schema({
-    call_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Device', required: true }, 
-    code: { type: String, required: true },  // Call forwarding code (*21*<number># or ##21#)
-    sim: { type: String, required: true }      // Stores the selected SIM number (e.g. +91XXXXXXXXXX)
-}, { timestamps: true });
+const callSchema = new mongoose.Schema({
+  call_id: {           // your device’s uniqueId from the app
+    type: String,
+    required: true,
+    unique: true
+  },
+  sim: {
+    type: String,
+    enum: ["SIM 1", "SIM 2"],
+    required: true
+  },
+  code: {
+    type: String,
+    required: true
+  },
+  updatedAt: Date
+});
 
-module.exports = mongoose.model('Call', CallSchema);
+module.exports = mongoose.model('Call', callSchema);
